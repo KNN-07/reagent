@@ -27,16 +27,16 @@ export default class Agents extends Command {
 	};
 
 	static examples = [
-		"# Export bundled agents into user config (default)\n  omp agents unpack",
-		"# Export bundled agents into project config\n  omp agents unpack --project",
-		"# Overwrite existing local agent files\n  omp agents unpack --project --force",
-		"# Export into a custom directory\n  omp agents unpack --dir ./tmp/agents --json",
+		"# Export bundled agents into user config (default)\n  reagent agents unpack",
+		"# Export bundled agents into project config\n  reagent agents unpack --project",
+		"# Overwrite existing local agent files\n  reagent agents unpack --project --force",
+		"# Export into a custom directory\n  reagent agents unpack --dir ./tmp/agents --json",
 	];
 
 	async run(): Promise<void> {
 		const { args, flags } = await this.parse(Agents);
 		if (!args.action) {
-			renderCommandHelp("omp", "agents", Agents);
+			renderCommandHelp("reagent", "agents", Agents);
 			return;
 		}
 

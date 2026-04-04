@@ -47,9 +47,9 @@
 - [x] `reagent/AGENTS.md`
 - [x] `reagent/packages/research-agent/src/index.ts` (barrel exports)
 
-## Phase 8: Native Build (Blocked — pending env setup)
-- [ ] Build `@reagent/ra-natives` Rust addon
-  - Requires: `zig` in PATH (for `zlob` crate)
-  - Once zig is available: `cargo build --release --manifest-path crates/pi-natives/Cargo.toml`
-  - Then copy output DLL to `packages/natives/native/pi_natives.win32-x64-baseline.node`
-  - Alternatively: install winget package `ziglang.zig` and retry
+## Phase 8: Native Build
+- [x] Build `@reagent/ra-natives` Rust addon
+  - `zig` 0.15.2 found at `/snap/bin/zig` ✓
+  - Installed `clang`/`libclang-dev` (needed by `bindgen` for `zlob` FFI headers)
+  - `cargo build --release` → compiled 657 crates, elapsed ~3m
+  - `bun packages/natives/scripts/build-native.ts` → installed `packages/natives/native/pi_natives.linux-x64-modern.node` (81 MB)

@@ -503,7 +503,7 @@ export class PythonKernel {
 			kernelId,
 			config.url,
 			Snowflake.next(),
-			"omp",
+			"reagent",
 			false,
 			config.token,
 		);
@@ -563,7 +563,7 @@ export class PythonKernel {
 		);
 		const kernelId = kernelInfo.id;
 
-		const kernel = new PythonKernel(Snowflake.next(), kernelId, gatewayUrl, Snowflake.next(), "omp", true);
+		const kernel = new PythonKernel(Snowflake.next(), kernelId, gatewayUrl, Snowflake.next(), "reagent", true);
 
 		try {
 			await logger.timeAsync("startWithSharedGateway:connectWS", () => kernel.#connectWebSocket(startup));

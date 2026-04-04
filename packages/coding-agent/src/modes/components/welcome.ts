@@ -14,7 +14,7 @@ export interface LspServerInfo {
 }
 
 /**
- * Premium welcome screen with block-based OMP logo and two-column layout.
+ * Premium welcome screen with block-based ReAgent logo and two-column layout.
  */
 export class WelcomeComponent implements Component {
 	constructor(
@@ -53,7 +53,7 @@ export class WelcomeComponent implements Component {
 		const minRightCol = 20;
 		const leftMinContentWidth = Math.max(
 			minLeftCol,
-			visibleWidth("Welcome back!"),
+			visibleWidth("  ReAgent  "),
 			visibleWidth(this.modelName),
 			visibleWidth(this.providerName),
 		);
@@ -67,9 +67,15 @@ export class WelcomeComponent implements Component {
 		const leftCol = showRightColumn ? dualLeftCol : boxWidth - 2;
 		const rightCol = showRightColumn ? dualRightCol : 0;
 
-		// Block-based OMP logo (gradient: magenta → cyan)
+		// Block-based ReAgent logo (atom / research flask motif)
 		// biome-ignore format: preserve ASCII art layout
-		const piLogo = ["▀████████████▀", " ╘███    ███  ", "  ███    ███  ", "  ███    ███  ", " ▄███▄  ▄███▄ "];
+		const piLogo = [
+			"  ┌───●───┐  ",
+			" ╭┈┈┈·○·┈┈┈╮ ",
+			" │   ◆   │ ",
+			" ╰┈┈┈·○·┈┈┈╯ ",
+			"  └───●───┘  ",
+		];
 
 		// Apply gradient to logo
 		const logoColored = piLogo.map(line => this.#gradientLine(line));
@@ -77,7 +83,7 @@ export class WelcomeComponent implements Component {
 		// Left column - centered content
 		const leftLines = [
 			"",
-			this.#centerText(theme.bold("Welcome back!"), leftCol),
+			this.#centerText(theme.bold("  ReAgent  "), leftCol),
 			"",
 			...logoColored.map(l => this.#centerText(l, leftCol)),
 			"",
@@ -191,15 +197,15 @@ export class WelcomeComponent implements Component {
 		return padding(leftPad) + text + padding(rightPad);
 	}
 
-	/** Apply magenta→cyan gradient to a string */
+	/** Apply blue→teal gradient to a string */
 	#gradientLine(line: string): string {
 		const colors = [
-			"\x1b[38;5;199m", // bright magenta
-			"\x1b[38;5;171m", // magenta-purple
-			"\x1b[38;5;135m", // purple
-			"\x1b[38;5;99m", // purple-blue
-			"\x1b[38;5;75m", // cyan-blue
-			"\x1b[38;5;51m", // bright cyan
+			"\x1b[38;5;39m",  // bright blue
+			"\x1b[38;5;38m",  // blue
+			"\x1b[38;5;44m",  // blue-teal
+			"\x1b[38;5;43m",  // teal
+			"\x1b[38;5;49m",  // bright teal
+			"\x1b[38;5;48m",  // green-teal
 		];
 		const reset = "\x1b[0m";
 

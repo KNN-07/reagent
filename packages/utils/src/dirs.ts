@@ -1,14 +1,15 @@
 /**
- * Centralized path helpers for omp config directories.
+ * Centralized path helpers for reagent config directories.
  *
- * Uses PI_CONFIG_DIR (default ".omp") for the config root and
+ * Uses PI_CONFIG_DIR (default ".reagent") for the config root and
  * PI_CODING_AGENT_DIR to override the agent directory.
  *
  * On Linux, if XDG_DATA_HOME / XDG_STATE_HOME / XDG_CACHE_HOME environment
  * variables are set, paths are redirected to XDG-compliant locations under
- * $XDG_*_HOME/omp/. This requires running `omp config migrate` first to
- * move data to the new locations. No filesystem existence checks are performed
- * — if the env var is set, omp trusts that the migration has been done.
+ * $XDG_*_HOME/reagent/. This requires running `reagent config migrate` first
+ * to move data to the new locations. No filesystem existence checks are
+ * performed — if the env var is set, reagent trusts that the migration has
+ * been done.
  */
 
 import * as fs from "node:fs";
@@ -16,11 +17,11 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { engines, version } from "../package.json" with { type: "json" };
 
-/** App name (e.g. "omp") */
-export const APP_NAME: string = "omp";
+/** App name (e.g. "reagent") */
+export const APP_NAME: string = "reagent";
 
-/** Config directory name (e.g. ".omp") */
-export const CONFIG_DIR_NAME: string = ".omp";
+/** Config directory name (e.g. ".reagent") */
+export const CONFIG_DIR_NAME: string = ".reagent";
 
 /** Version (e.g. "1.0.0") */
 export const VERSION: string = version;
@@ -106,10 +107,10 @@ export function getConfigAgentDirName(): string {
 type XdgCategory = "data" | "state" | "cache";
 
 /**
- * Resolves and caches all omp directory paths. On Linux, when XDG environment
- * variables are set, paths are redirected under $XDG_*_HOME/omp/. A new
- * instance is created whenever the agent directory changes, which naturally
- * invalidates all cached paths.
+ * Resolves and caches all reagent directory paths. On Linux, when XDG
+ * environment variables are set, paths are redirected under
+ * $XDG_*_HOME/reagent/. A new instance is created whenever the agent
+ * directory changes, which naturally invalidates all cached paths.
  */
 class DirResolver {
 	readonly configRoot: string;
