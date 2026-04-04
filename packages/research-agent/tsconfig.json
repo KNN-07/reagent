@@ -1,0 +1,15 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"paths": {
+			"@reagent/ra-coding-agent": ["../coding-agent/src/index.ts"],
+			"@reagent/ra-coding-agent/*": ["../coding-agent/src/*.ts"],
+			"@reagent/ra-agent-core": ["../agent/src/index.ts"],
+			"@reagent/ra-ai": ["../ai/src/index.ts"],
+			"@reagent/ra-tui": ["../tui/src/index.ts"],
+			"@reagent/ra-utils": ["../utils/src/index.ts"],
+			"@reagent/ra-natives": ["../natives/src/index.ts"]
+		}
+	},
+	"include": ["src/**/*"]
+}

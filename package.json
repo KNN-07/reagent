@@ -1,0 +1,25 @@
+{
+	"name": "reagent-workspace",
+	"version": "0.1.0",
+	"private": true,
+	"workspaces": [
+		"packages/ai",
+		"packages/agent",
+		"packages/tui",
+		"packages/utils",
+		"packages/natives",
+		"packages/coding-agent",
+		"packages/stats",
+		"packages/research-agent"
+	],
+	"scripts": {
+		"check": "bun check:ts",
+		"check:ts": "cd packages/research-agent && bun run check",
+		"dev": "bun run packages/research-agent/src/cli.ts",
+		"reagent": "bun run packages/research-agent/src/cli.ts"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/bun": "^1.3"
+	}
+}

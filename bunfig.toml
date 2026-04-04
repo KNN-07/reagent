@@ -1,0 +1,5 @@
+[install]
+optional = false
+
+[install.scopes]
+# All @reagent/* packages are served from the local workspace

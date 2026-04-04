@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+bun.lockb
+
+# Rust build artifacts
+target/
+crates/*/target/
+
+# Native builds (uncommitted — built locally)
+packages/natives/native/
+
+# Generated files (regenerated at build time)
+packages/coding-agent/src/internal-urls/docs-index.generated.ts
+
+# Distribution
+dist/
+*.tgz
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test output
+coverage/
+.nyc_output/
+
+# ReAgent runtime dirs (created at runtime, not committed)
+surveys/
+papers/
+autoresearch/
