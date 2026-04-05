@@ -3,7 +3,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { projfsOverlayStart, projfsOverlayStop } from "@reagent/ra-natives";
-import { APP_NAME, getWorktreeDir, isEnoent, logger, Snowflake } from "@reagent/ra-utils";
+import { getWorktreeDir, isEnoent, logger, Snowflake } from "@reagent/ra-utils";
 import { $ } from "bun";
 import * as git from "../utils/git";
 
@@ -154,7 +154,7 @@ export async function applyBaseline(worktreeDir: string, baseline: WorktreeBasel
 		// baseline untracked files in the diff-tree output.
 		if ((await git.status(nestedDir)).trim().length > 0) {
 			await git.stage.files(nestedDir);
-			await git.commit(nestedDir, `${APP_NAME}-baseline`, { allowEmpty: true });
+			await git.commit(nestedDir, "omp-baseline", { allowEmpty: true });
 			// Update baseline to reflect the committed state — prevents double-apply
 			// in captureRepoDeltaPatch's temp-index path
 			entry.baseline.headCommit = (await git.head.sha(nestedDir)) ?? "";
@@ -209,7 +209,7 @@ async function captureRepoDeltaPatch(repoDir: string, rb: RepoBaseline): Promise
 	}
 
 	// HEAD unchanged: use temp index approach (subtracts baseline from delta)
-	const tempIndex = path.join(os.tmpdir(), `${APP_NAME}-task-index-${Snowflake.next()}`);
+	const tempIndex = path.join(os.tmpdir(), `omp-task-index-${Snowflake.next()}`);
 	try {
 		await git.readTree(repoDir, rb.headCommit, {
 			env: { GIT_INDEX_FILE: tempIndex },
@@ -460,13 +460,13 @@ export async function commitToBranch(
 	if (!rootPatch.trim() && nestedPatches.length === 0) return null;
 
 	const repoRoot = baseline.root.repoRoot;
-	const branchName = `${APP_NAME}/task/${taskId}`;
+	const branchName = `omp/task/${taskId}`;
 	const fallbackMessage = description || taskId;
 
 	// Only create a branch if the root repo has changes
 	if (rootPatch.trim()) {
 		await git.branch.create(repoRoot, branchName);
-		const tmpDir = path.join(os.tmpdir(), `${APP_NAME}-branch-${Snowflake.next()}`);
+		const tmpDir = path.join(os.tmpdir(), `omp-branch-${Snowflake.next()}`);
 		try {
 			await git.worktree.add(repoRoot, tmpDir, branchName);
 			try {
@@ -515,29 +515,61 @@ export async function mergeTaskBranches(
 	const merged: string[] = [];
 	const failed: string[] = [];
 
-	for (const { branchName } of branches) {
-		try {
-			await git.cherryPick(repoRoot, branchName);
-		} catch (err) {
-			await git.cherryPick.abort(repoRoot);
-			const stderr =
-				err instanceof git.GitCommandError
-					? err.result.stderr.trim()
-					: err instanceof Error
-						? err.message
-						: String(err);
-			failed.push(branchName);
-			return {
-				merged,
-				failed: [...failed, ...branches.slice(merged.length + failed.length).map(b => b.branchName)],
-				conflict: `${branchName}: ${stderr}`,
-			};
-		}
+	// Stash dirty working tree so cherry-pick can operate on a clean HEAD.
+	// Without this, cherry-pick refuses to run when uncommitted changes exist.
+	const didStash = await git.stash.push(repoRoot, "omp-task-merge");
 
-		merged.push(branchName);
+	let conflictResult: MergeBranchResult | undefined;
+
+	try {
+		for (const { branchName } of branches) {
+			try {
+				await git.cherryPick(repoRoot, branchName);
+			} catch (err) {
+				try {
+					await git.cherryPick.abort(repoRoot);
+				} catch {
+					/* no state to abort */
+				}
+				const stderr =
+					err instanceof git.GitCommandError
+						? err.result.stderr.trim()
+						: err instanceof Error
+							? err.message
+							: String(err);
+				failed.push(branchName);
+				conflictResult = {
+					merged,
+					failed: [...failed, ...branches.slice(merged.length + failed.length).map(b => b.branchName)],
+					conflict: `${branchName}: ${stderr}`,
+				};
+				break;
+			}
+
+			merged.push(branchName);
+		}
+	} finally {
+		if (didStash) {
+			try {
+				await git.stash.pop(repoRoot, { index: true });
+			} catch {
+				// Stash-pop conflicts mean the replayed changes clash with the user's
+				// uncommitted edits. Treat this as a merge failure so the caller preserves
+				// recovery branches instead of reporting success and deleting them.
+				logger.warn("Failed to restore stashed changes after task merge; stash entry preserved");
+				if (!conflictResult) {
+					conflictResult = {
+						merged,
+						failed: merged,
+						conflict:
+							"stash pop: cherry-picked changes conflict with uncommitted edits. Run `git stash pop` and resolve manually.",
+					};
+				}
+			}
+		}
 	}
 
-	return { merged, failed };
+	return conflictResult ?? { merged, failed };
 }
 
 /** Clean up temporary task branches. */
