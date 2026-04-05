@@ -90,12 +90,12 @@ export function setProjectDir(dir: string): void {
 	process.chdir(projectDir);
 }
 
-/** Get the config directory name relative to home (e.g. ".omp" or PI_CONFIG_DIR override). */
+/** Get the config directory name relative to home (e.g. ".reagent" or PI_CONFIG_DIR override). */
 export function getConfigDirName(): string {
 	return process.env.PI_CONFIG_DIR || CONFIG_DIR_NAME;
 }
 
-/** Get the config agent directory name relative to home (e.g. ".omp/agent" or PI_CONFIG_DIR + "/agent"). */
+/** Get the config agent directory name relative to home (e.g. ".reagent/agent" or PI_CONFIG_DIR + "/agent"). */
 export function getConfigAgentDirName(): string {
 	return `${getConfigDirName()}/agent`;
 }
@@ -117,7 +117,7 @@ class DirResolver {
 	readonly agentDir: string;
 
 	// Per-category base dirs. Without XDG, all three equal configRoot / agentDir.
-	// With XDG on Linux, they point to $XDG_*_HOME/omp/.
+	// With XDG on Linux, they point to $XDG_*_HOME/reagent/.
 	readonly #rootDirs: Record<XdgCategory, string>;
 	readonly #agentDirs: Record<XdgCategory, string>;
 
@@ -159,7 +159,7 @@ class DirResolver {
 			state: xdgState ?? this.configRoot,
 			cache: xdgCache ?? this.configRoot,
 		};
-		// XDG flattens the agent/ prefix: ~/.omp/agent/sessions → $XDG_DATA_HOME/omp/sessions
+		// XDG flattens the agent/ prefix: ~/.reagent/agent/sessions → $XDG_DATA_HOME/reagent/sessions
 		this.#agentDirs = {
 			data: xdgData ?? this.agentDir,
 			state: xdgState ?? this.agentDir,
@@ -197,7 +197,7 @@ let dirs = new DirResolver(process.env.PI_CODING_AGENT_DIR);
 // Root directories
 // =============================================================================
 
-/** Get the config root directory (~/.omp). */
+/** Get the config root directory (~/.reagent). */
 export function getConfigRootDir(): string {
 	return dirs.configRoot;
 }
@@ -208,107 +208,107 @@ export function setAgentDir(dir: string): void {
 	process.env.PI_CODING_AGENT_DIR = dir;
 }
 
-/** Get the agent config directory (~/.omp/agent). */
+/** Get the agent config directory (~/.reagent/agent). */
 export function getAgentDir(): string {
 	return dirs.agentDir;
 }
 
-/** Get the project-local config directory (.omp). */
+/** Get the project-local config directory (.reagent). */
 export function getProjectAgentDir(cwd: string = getProjectDir()): string {
 	return path.join(cwd, CONFIG_DIR_NAME);
 }
 
 // =============================================================================
-// Config-root subdirectories (~/.omp/*)
+// Config-root subdirectories (~/.reagent/*)
 // =============================================================================
 
-/** Get the reports directory (~/.omp/reports). */
+/** Get the reports directory (~/.reagent/reports). */
 export function getReportsDir(): string {
 	return dirs.rootSubdir("reports", "state");
 }
 
-/** Get the logs directory (~/.omp/logs). */
+/** Get the logs directory (~/.reagent/logs). */
 export function getLogsDir(): string {
 	return dirs.rootSubdir("logs", "state");
 }
 
-/** Get the path to a dated log file (~/.omp/logs/omp.YYYY-MM-DD.log). */
+/** Get the path to a dated log file (~/.reagent/logs/reagent.YYYY-MM-DD.log). */
 export function getLogPath(date = new Date()): string {
 	return path.join(getLogsDir(), `${APP_NAME}.${date.toISOString().slice(0, 10)}.log`);
 }
 
-/** Get the plugins directory (~/.omp/plugins). */
+/** Get the plugins directory (~/.reagent/plugins). */
 export function getPluginsDir(): string {
 	return dirs.rootSubdir("plugins", "data");
 }
 
-/** Where npm installs packages (~/.omp/plugins/node_modules). */
+/** Where npm installs packages (~/.reagent/plugins/node_modules). */
 export function getPluginsNodeModules(): string {
 	return path.join(getPluginsDir(), "node_modules");
 }
 
-/** Plugin manifest (~/.omp/plugins/package.json). */
+/** Plugin manifest (~/.reagent/plugins/package.json). */
 export function getPluginsPackageJson(): string {
 	return path.join(getPluginsDir(), "package.json");
 }
 
-/** Plugin lock file (~/.omp/plugins/omp-plugins.lock.json). */
+/** Plugin lock file (~/.reagent/plugins/reagent-plugins.lock.json). */
 export function getPluginsLockfile(): string {
-	return path.join(getPluginsDir(), "omp-plugins.lock.json");
+	return path.join(getPluginsDir(), "reagent-plugins.lock.json");
 }
 
-/** Get the remote mount directory (~/.omp/remote). */
+/** Get the remote mount directory (~/.reagent/remote). */
 export function getRemoteDir(): string {
 	return dirs.rootSubdir("remote", "data");
 }
 
-/** Get the SSH control socket directory (~/.omp/ssh-control). */
+/** Get the SSH control socket directory (~/.reagent/ssh-control). */
 export function getSshControlDir(): string {
 	return dirs.rootSubdir("ssh-control", "state");
 }
 
-/** Get the remote host info directory (~/.omp/remote-host). */
+/** Get the remote host info directory (~/.reagent/remote-host). */
 export function getRemoteHostDir(): string {
 	return dirs.rootSubdir("remote-host", "data");
 }
 
-/** Get the managed Python venv directory (~/.omp/python-env). */
+/** Get the managed Python venv directory (~/.reagent/python-env). */
 export function getPythonEnvDir(): string {
 	return dirs.rootSubdir("python-env", "data");
 }
 
-/** Get the puppeteer sandbox directory (~/.omp/puppeteer). */
+/** Get the puppeteer sandbox directory (~/.reagent/puppeteer). */
 export function getPuppeteerDir(): string {
 	return dirs.rootSubdir("puppeteer", "cache");
 }
 
-/** Get the worktree base directory (~/.omp/wt). */
+/** Get the worktree base directory (~/.reagent/wt). */
 export function getWorktreeBaseDir(): string {
 	return dirs.rootSubdir("wt", "data");
 }
 
-/** Get the path to a worktree directory (~/.omp/wt/<project>/<id>). */
+/** Get the path to a worktree directory (~/.reagent/wt/<project>/<id>). */
 export function getWorktreeDir(encodedProject: string, id: string): string {
 	return path.join(getWorktreeBaseDir(), encodedProject, id);
 }
 
-/** Get the GPU cache path (~/.omp/gpu_cache.json). */
+/** Get the GPU cache path (~/.reagent/gpu_cache.json). */
 export function getGpuCachePath(): string {
 	return dirs.rootSubdir("gpu_cache.json", "cache");
 }
 
-/** Get the natives directory (~/.omp/natives). */
+/** Get the natives directory (~/.reagent/natives). */
 export function getNativesDir(): string {
 	return dirs.rootSubdir("natives", "cache");
 }
 
-/** Get the stats database path (~/.omp/stats.db). */
+/** Get the stats database path (~/.reagent/stats.db). */
 export function getStatsDbPath(): string {
 	return dirs.rootSubdir("stats.db", "data");
 }
 
 // =============================================================================
-// Agent subdirectories (~/.omp/agent/*)
+// Agent subdirectories (~/.reagent/agent/*)
 // =============================================================================
 
 /** Get the path to agent.db (SQLite database for settings and auth storage). */
@@ -326,81 +326,81 @@ export function getModelDbPath(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "models.db", "data");
 }
 
-/** Get the directory path for the shared search DB state (~/.omp/agent/search-db). */
+/** Get the directory path for the shared search DB state (~/.reagent/agent/search-db). */
 export function getSearchDbDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "search-db", "data");
 }
 
-/** Get the sessions directory (~/.omp/agent/sessions). */
+/** Get the sessions directory (~/.reagent/agent/sessions). */
 export function getSessionsDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "sessions", "data");
 }
 
-/** Get the content-addressed blob store directory (~/.omp/agent/blobs). */
+/** Get the content-addressed blob store directory (~/.reagent/agent/blobs). */
 export function getBlobsDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "blobs", "data");
 }
 
-/** Get the custom themes directory (~/.omp/agent/themes). */
+/** Get the custom themes directory (~/.reagent/agent/themes). */
 export function getCustomThemesDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "themes");
 }
 
-/** Get the tools directory (~/.omp/agent/tools). */
+/** Get the tools directory (~/.reagent/agent/tools). */
 export function getToolsDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "tools");
 }
 
-/** Get the slash commands directory (~/.omp/agent/commands). */
+/** Get the slash commands directory (~/.reagent/agent/commands). */
 export function getCommandsDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "commands");
 }
 
-/** Get the prompts directory (~/.omp/agent/prompts). */
+/** Get the prompts directory (~/.reagent/agent/prompts). */
 export function getPromptsDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "prompts");
 }
 
-/** Get the user-level Python modules directory (~/.omp/agent/modules). */
+/** Get the user-level Python modules directory (~/.reagent/agent/modules). */
 export function getAgentModulesDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "modules");
 }
 
-/** Get the memories directory (~/.omp/agent/memories). */
+/** Get the memories directory (~/.reagent/agent/memories). */
 export function getMemoriesDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "memories", "state");
 }
 
-/** Get the terminal sessions directory (~/.omp/agent/terminal-sessions). */
+/** Get the terminal sessions directory (~/.reagent/agent/terminal-sessions). */
 export function getTerminalSessionsDir(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, "terminal-sessions", "state");
 }
 
-/** Get the crash log path (~/.omp/agent/omp-crash.log). */
+/** Get the crash log path (~/.reagent/agent/reagent-crash.log). */
 export function getCrashLogPath(agentDir?: string): string {
-	return dirs.agentSubdir(agentDir, "omp-crash.log", "state");
+	return dirs.agentSubdir(agentDir, "reagent-crash.log", "state");
 }
 
-/** Get the debug log path (~/.omp/agent/omp-debug.log). */
+/** Get the debug log path (~/.reagent/agent/reagent-debug.log). */
 export function getDebugLogPath(agentDir?: string): string {
 	return dirs.agentSubdir(agentDir, `${APP_NAME}-debug.log`, "state");
 }
 
 // =============================================================================
-// Project subdirectories (.omp/*)
+// Project subdirectories (.reagent/*)
 // =============================================================================
 
-/** Get the project-level Python modules directory (.omp/modules). */
+/** Get the project-level Python modules directory (.reagent/modules). */
 export function getProjectModulesDir(cwd: string = getProjectDir()): string {
 	return path.join(getProjectAgentDir(cwd), "modules");
 }
 
-/** Get the project-level prompts directory (.omp/prompts). */
+/** Get the project-level prompts directory (.reagent/prompts). */
 export function getProjectPromptsDir(cwd: string = getProjectDir()): string {
 	return path.join(getProjectAgentDir(cwd), "prompts");
 }
 
-/** Get the project-level plugin overrides path (.omp/plugin-overrides.json). */
+/** Get the project-level plugin overrides path (.reagent/plugin-overrides.json). */
 export function getProjectPluginOverridesPath(cwd: string = getProjectDir()): string {
 	return path.join(getProjectAgentDir(cwd), "plugin-overrides.json");
 }

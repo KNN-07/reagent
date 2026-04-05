@@ -48,7 +48,7 @@ registerProvider<CapabilitySlashCommand>(slashCommandCapability.id, {
 	displayName: DISPLAY_NAME,
 	description: DESCRIPTION,
 	// Priority 90 — lower than native (100) so the user can override with their own
-	// .omp/commands/survey.md, but higher than tool-specific providers (50-99 overlap).
+	// .reagent/commands/survey.md, but higher than tool-specific providers (50-99 overlap).
 	priority: 90,
 	load: loadReagentCommands,
 });

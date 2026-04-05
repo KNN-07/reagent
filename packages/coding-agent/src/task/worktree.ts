@@ -3,7 +3,7 @@ import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
 import { projfsOverlayStart, projfsOverlayStop } from "@reagent/ra-natives";
-import { getWorktreeDir, isEnoent, logger, Snowflake } from "@reagent/ra-utils";
+import { APP_NAME, getWorktreeDir, isEnoent, logger, Snowflake } from "@reagent/ra-utils";
 import { $ } from "bun";
 import * as git from "../utils/git";
 
@@ -154,7 +154,7 @@ export async function applyBaseline(worktreeDir: string, baseline: WorktreeBasel
 		// baseline untracked files in the diff-tree output.
 		if ((await git.status(nestedDir)).trim().length > 0) {
 			await git.stage.files(nestedDir);
-			await git.commit(nestedDir, "omp-baseline", { allowEmpty: true });
+			await git.commit(nestedDir, `${APP_NAME}-baseline`, { allowEmpty: true });
 			// Update baseline to reflect the committed state — prevents double-apply
 			// in captureRepoDeltaPatch's temp-index path
 			entry.baseline.headCommit = (await git.head.sha(nestedDir)) ?? "";
@@ -209,7 +209,7 @@ async function captureRepoDeltaPatch(repoDir: string, rb: RepoBaseline): Promise
 	}
 
 	// HEAD unchanged: use temp index approach (subtracts baseline from delta)
-	const tempIndex = path.join(os.tmpdir(), `omp-task-index-${Snowflake.next()}`);
+	const tempIndex = path.join(os.tmpdir(), `${APP_NAME}-task-index-${Snowflake.next()}`);
 	try {
 		await git.readTree(repoDir, rb.headCommit, {
 			env: { GIT_INDEX_FILE: tempIndex },
@@ -460,13 +460,13 @@ export async function commitToBranch(
 	if (!rootPatch.trim() && nestedPatches.length === 0) return null;
 
 	const repoRoot = baseline.root.repoRoot;
-	const branchName = `omp/task/${taskId}`;
+	const branchName = `${APP_NAME}/task/${taskId}`;
 	const fallbackMessage = description || taskId;
 
 	// Only create a branch if the root repo has changes
 	if (rootPatch.trim()) {
 		await git.branch.create(repoRoot, branchName);
-		const tmpDir = path.join(os.tmpdir(), `omp-branch-${Snowflake.next()}`);
+		const tmpDir = path.join(os.tmpdir(), `${APP_NAME}-branch-${Snowflake.next()}`);
 		try {
 			await git.worktree.add(repoRoot, tmpDir, branchName);
 			try {

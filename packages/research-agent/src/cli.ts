@@ -2,7 +2,7 @@
 /**
  * ReAgent CLI — AI/ML Research Agent Harness
  *
- * Extends oh-my-pi's coding agent with research-specific workflows:
+ * Extends the ra-coding-agent with research-specific workflows:
  *   /survey       — deep paper survey with LaTeX + PDF output
  *   /review       — simulated multi-model peer review
  *   /autoresearch — automated ML experimentation loop
@@ -27,7 +27,7 @@ async function main(): Promise<void> {
 	// Non-blocking — only emits warnings, doesn't exit.
 	void checkDependencies();
 
-	// Pass through to oh-my-pi's root command handler.
+	// Pass through to the ra-coding-agent's root command handler.
 	// ReAgent's slash commands (/survey, /review, /autoresearch, /autopaper)
 	// are registered as custom slash commands via the extension system,
 	// loaded from src/workflows/*/slash-command.ts at session startup.

@@ -2,9 +2,9 @@
  * Task tool - Delegate tasks to specialized agents.
  *
  * Discovers agent definitions from:
- *   - Bundled agents (shipped with omp-coding-agent)
- *   - ~/.omp/agent/agents/*.md (user-level)
- *   - .omp/agents/*.md (project-level)
+ *   - Bundled agents (shipped with ra-coding-agent)
+ *   - ~/.reagent/agent/agents/*.md (user-level)
+ *   - .reagent/agents/*.md (project-level)
  *
  * Supports:
  *   - Single agent execution
@@ -17,7 +17,7 @@ import * as os from "node:os";
 import path from "node:path";
 import type { AgentTool, AgentToolResult, AgentToolUpdateCallback } from "@reagent/ra-agent-core";
 import type { Usage } from "@reagent/ra-ai";
-import { $env, Snowflake } from "@reagent/ra-utils";
+import { APP_NAME, $env, Snowflake } from "@reagent/ra-utils";
 import type { ToolSession } from "..";
 import { resolveAgentModelPatterns } from "../config/model-resolver";
 import { renderPromptTemplate } from "../config/prompt-templates";
@@ -649,7 +649,7 @@ export class TaskTool implements AgentTool<TaskSchema, TaskToolDetails, Theme> {
 		// Derive artifacts directory
 		const sessionFile = this.session.getSessionFile();
 		const artifactsDir = sessionFile ? sessionFile.slice(0, -6) : null;
-		const tempArtifactsDir = artifactsDir ? null : path.join(os.tmpdir(), `omp-task-${Snowflake.next()}`);
+		const tempArtifactsDir = artifactsDir ? null : path.join(os.tmpdir(), `${APP_NAME}-task-${Snowflake.next()}`);
 		const effectiveArtifactsDir = artifactsDir || tempArtifactsDir!;
 
 		// Initialize progress tracking
@@ -876,7 +876,7 @@ export class TaskTool implements AgentTool<TaskSchema, TaskToolDetails, Theme> {
 							};
 						} catch (mergeErr) {
 							// Agent succeeded but branch commit failed — clean up stale branch
-							const branchName = `omp/task/${task.id}`;
+							const branchName = `${APP_NAME}/task/${task.id}`;
 							await git.branch.tryDelete(repoRoot, branchName);
 							const msg = mergeErr instanceof Error ? mergeErr.message : String(mergeErr);
 							return { ...result, error: `Merge failed: ${msg}` };

@@ -5,8 +5,8 @@
  * that export a default CustomTool or CustomTool[]. Loads and registers them
  * into the agent session's tool registry at startup.
  *
- * This mirrors oh-my-pi's extensibility system but scoped to ReAgent's
- * config directory (.reagent instead of .omp).
+ * This mirrors the ra-coding-agent's extensibility system but scoped to ReAgent's
+ * config directory (.reagent instead of .reagent via PI_CONFIG_DIR).
  */
 
 import * as fs from "node:fs/promises";

@@ -12,7 +12,7 @@ import { $ } from "bun";
 import chalk from "chalk";
 import { theme } from "../modes/theme/theme";
 
-const REPO = "can1357/oh-my-pi";
+const REPO = "KNN-07/reagent";
 const PACKAGE = "@reagent/ra-coding-agent";
 
 interface ReleaseInfo {
@@ -72,12 +72,12 @@ export function _resolveUpdateMethodForTest(ompPath: string, bunBinDir: string |
 }
 async function resolveUpdateTarget(): Promise<UpdateTarget> {
 	const bunBinDir = await getBunGlobalBinDir();
-	const ompPath = resolveOmpPath();
+	const appPath = resolveOmpPath();
 
-	if (ompPath) {
-		const method = resolveUpdateMethod(ompPath, bunBinDir);
+	if (appPath) {
+		const method = resolveUpdateMethod(appPath, bunBinDir);
 		if (method === "bun") return { method };
-		return { method, path: ompPath };
+		return { method, path: appPath };
 	}
 
 	if (bunBinDir) return { method: "bun" };
@@ -164,7 +164,7 @@ function getBinaryName(): string {
 }
 
 /**
- * Resolve the path that `omp` maps to in the user's PATH.
+ * Resolve the path that `reagent` maps to in the user's PATH.
  */
 function resolveOmpPath(): string | undefined {
 	return Bun.which(APP_NAME) ?? undefined;
@@ -182,7 +182,7 @@ async function verifyInstalledVersion(
 		const result = await $`${ompPath} --version`.quiet().nothrow();
 		if (result.exitCode !== 0) return { ok: false, path: ompPath };
 		const output = result.text().trim();
-		// Output format: "omp/X.Y.Z"
+		// Output format: "reagent/X.Y.Z"
 		const match = output.match(/\/(\d+\.\d+\.\d+)/);
 		const actual = match?.[1];
 		return { ok: actual === expectedVersion, actual, path: ompPath };

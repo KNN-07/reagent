@@ -1,7 +1,7 @@
 /**
  * KairosMemory — Background Memory Consolidation for ReAgent
  *
- * Adapted from oh-my-pi's packages/coding-agent/src/memories/index.ts.
+ * Adapted from the ra-coding-agent's packages/coding-agent/src/memories/index.ts.
  * Provides a two-phase background memory pipeline tailored for research sessions:
  *
  * Phase 1 (per-session): Scans JSONL session logs, extracts memorable research

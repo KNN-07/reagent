@@ -2,7 +2,7 @@
  * ReAgent slash command registry
  *
  * Maps /survey, /review, /autoresearch, /autopaper to their system prompts.
- * These are registered as FileSlashCommands via the oh-my-pi extensibility
+ * These are registered as native slash commands via the ReAgent capability
  * system when the agent session starts.
  */
 
@@ -56,6 +56,6 @@ export function buildSlashCommandHelp(): string {
 	for (const cmd of REAGENT_SLASH_COMMANDS) {
 		lines.push(`  **/${cmd.name}** — ${cmd.description}`);
 	}
-	lines.push("\nAll oh-my-pi tools are available (bash, read, write, grep, fetch, browser, exa, etc.).");
+	lines.push("\nAll standard tools are available (bash, read, write, grep, fetch, browser, exa, etc.).");
 	return lines.join("\n");
 }
