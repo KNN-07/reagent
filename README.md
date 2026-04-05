@@ -1,5 +1,5 @@
 # ReAgent
-
+![ReAgent Logo](assets\Logo.png)
 **AI/ML Research Agent Harness** — an intelligent CLI that automates the full research lifecycle from literature survey to paper submission.
 
 Built on [oh-my-pi](https://github.com/can1357/oh-my-pi)'s coding agent framework with research-specific workflows, background memory consolidation, and formal math verification.
