@@ -2,7 +2,7 @@
 
 Custom tools are model-callable functions that plug into the same tool execution pipeline as built-in tools.
 
-A custom tool is a TypeScript/JavaScript module that exports a factory. The factory receives a host API (`CustomToolAPI`) and returns one tool or an array of tools.
+A custom tool is a TypeScript/JavaScript module that exports a `CustomTool` object (or array of them) as its **default export**. ReAgent loads these at startup via Bun's native TypeScript runtime — no compilation step required.
 
 ## What this is (and is not)
 
@@ -40,16 +40,34 @@ CustomTool.execute(toolCallId, params, onUpdate, ctx, signal)
    └─ return result  -> final tool content/details
 ```
 
-## Discovery locations (loader API)
+## Discovery locations
 
-`discoverAndLoadCustomTools(configuredPaths, cwd, builtInToolNames)` merges:
+### ReAgent loader (`research-agent/src/extensibility/custom-tools/loader.ts`)
+
+`loadCustomTools(cwd)` scans two directories in order:
+
+1. **Global**: `~/.reagent/tools/*.{ts,js}`
+2. **Project-local**: `<cwd>/.reagent/tools/*.{ts,js}`
+
+Files that fail to load are recorded in `errors` but don't abort the rest:
+
+```ts
+interface LoadedCustomTools {
+  tools: CustomTool[];
+  errors: string[];
+}
+```
+
+### Coding-agent capability-based discovery (`discoverAndLoadCustomTools`)
+
+The underlying `@reagent/ra-coding-agent` also supports capability-provider discovery:
 
 1. Capability providers (`toolCapability`), including:
-   - Native OMP config (`~/.omp/agent/tools`, `.omp/tools`)
+   - Native ReAgent config (`~/.reagent/agent/tools`, `.reagent/tools`)
    - Claude config (`~/.claude/tools`, `.claude/tools`)
    - Codex config (`~/.codex/tools`, `.codex/tools`)
    - Claude marketplace plugin cache provider
-2. Installed plugin manifests (`~/.omp/plugins/node_modules/*` via plugin loader)
+2. Installed plugin manifests (`~/.reagent/plugins/node_modules/*` via plugin loader)
 3. Explicit configured paths passed to the loader
 
 ### Important behavior
@@ -61,17 +79,18 @@ CustomTool.execute(toolCallId, params, onUpdate, ctx, signal)
 
 ## Module contract
 
-A custom tool module must export a function (default export preferred):
+Export a `CustomTool` object (or array) as the default export. Import types from `@reagent/ra-coding-agent`:
 
 ```ts
-import type { CustomToolFactory } from "@oh-my-pi/pi-coding-agent";
+import { Type } from "@sinclair/typebox";
+import type { CustomTool } from "@reagent/ra-coding-agent/extensibility/custom-tools";
 
-const factory: CustomToolFactory = (pi) => ({
+const repoStats: CustomTool = {
 	name: "repo_stats",
 	label: "Repo Stats",
 	description: "Counts tracked TypeScript files",
-	parameters: pi.typebox.Type.Object({
-		glob: pi.typebox.Type.Optional(pi.typebox.Type.String({ default: "**/*.ts" })),
+	parameters: Type.Object({
+		glob: Type.Optional(Type.String({ default: "**/*.ts" })),
 	}),
 
 	async execute(toolCallId, params, onUpdate, ctx, signal) {
@@ -80,7 +99,7 @@ const factory: CustomToolFactory = (pi) => ({
 			details: { phase: "scan" },
 		});
 
-		const result = await pi.exec("git", ["ls-files", params.glob ?? "**/*.ts"], { signal, cwd: pi.cwd });
+		const result = await ctx.exec("git", ["ls-files", params.glob ?? "**/*.ts"], { signal, cwd: ctx.cwd });
 		if (result.killed) {
 			throw new Error("Scan was cancelled");
 		}
@@ -100,31 +119,34 @@ const factory: CustomToolFactory = (pi) => ({
 			// cleanup resources if needed
 		}
 	},
-});
+};
 
-export default factory;
-```
+export default repoStats;
+// export default [repoStats, anotherTool]; // array also supported
 
-Factory return type:
+## API surface (`CustomTool` interface)
 
-- `CustomTool`
-- `CustomTool[]`
-- `Promise<CustomTool | CustomTool[]>`
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | ✓ | Unique tool name (global in session registry) |
+| `label` | `string` | | Display label shown in TUI |
+| `description` | `string` | ✓ | Model-facing tool description |
+| `parameters` | TypeBox schema | ✓ | Input parameter schema (`Type.Object(...)`) |
+| `execute` | function | ✓ | Main execution handler |
+| `onSession` | function | | Session lifecycle hook |
+| `renderCall` | function | | Custom call rendering (TUI) |
+| `renderResult` | function | | Custom result rendering (TUI) |
 
-## API surface passed to factories (`CustomToolAPI`)
-
-From `types.ts` and `loader.ts`:
+### `execute` context (`ctx`)
 
 - `cwd`: host working directory
 - `exec(command, args, options?)`: process execution helper
-- `ui`: UI context (can be no-op in headless modes)
+- `ui`: UI context (no-op in headless/agent-only modes)
 - `hasUI`: `false` in non-interactive flows
-- `logger`: shared file logger
-- `typebox`: injected `@sinclair/typebox`
-- `pi`: injected `@oh-my-pi/pi-coding-agent` exports
-- `pushPendingAction(action)`: register a preview action for hidden `resolve` tool (`docs/resolve-tool-runtime.md`)
-
-Loader starts with a no-op UI context and requires host code to call `setUIContext(...)` when real UI is ready.
+- `logger`: shared file logger (`@reagent/ra-utils`)
+- `sessionManager`: access session state/history for stateful tools
+- `abort()`: request abort of the current agent operation
+- `pushPendingAction(action)`: register a preview action for the `resolve` tool (see `resolve-tool-runtime.md`)
 
 ## Execution contract and typing
 
@@ -184,7 +206,7 @@ Use `ctx.sessionManager` to reconstruct state from history when branch/session c
 ### Cancellation
 
 - Agent abort propagates through `AbortSignal` to `execute`.
-- Forward `signal` to subprocess work (`pi.exec(..., { signal })`) for cooperative cancellation.
+- Forward `signal` to subprocess work (`ctx.exec(..., { signal })`) for cooperative cancellation.
 - `ctx.abort()` lets a tool request abort of the current agent operation.
 
 ### onSession errors
@@ -195,5 +217,5 @@ Use `ctx.sessionManager` to reconstruct state from history when branch/session c
 
 - Tool names must be globally unique in the active registry.
 - Prefer deterministic, schema-shaped outputs in `details` for renderer/state reconstruction.
-- Guard UI usage with `pi.hasUI`.
+- Guard UI usage with `ctx.hasUI`.
 - Treat `.md`/`.json` in tool directories as metadata, not executable modules.

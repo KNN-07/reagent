@@ -30,14 +30,14 @@ Extension loading builds a list of module entry files, imports each module with 
 
 Effective native locations:
 
-- Project: `<cwd>/.omp/extensions`
-- User: `~/.omp/agent/extensions`
+- Project: `<cwd>/.reagent/extensions`
+- User: `~/.reagent/agent/extensions`
 
 Path roots come from the native provider (`SOURCE_PATHS.native`).
 
 Notes:
 
-- Native auto-discovery is currently `.omp` based.
+- Native auto-discovery is currently `.reagent` based.
 - Legacy `.pi` is still accepted in `package.json` manifest keys (`pi.extensions`), but not as a native root here.
 
 ### 2) Explicitly configured paths
@@ -51,16 +51,16 @@ Configured path sources in the main session startup path (`sdk.ts`):
 
 Global settings file:
 
-- `~/.omp/agent/config.yml` (or custom agent dir via `PI_CODING_AGENT_DIR`)
+- `~/.reagent/agent/config.yml` (or custom agent dir via `PI_CODING_AGENT_DIR`)
 
 Project settings file:
 
-- `<cwd>/.omp/settings.json`
+- `<cwd>/.reagent/settings.json`
 
 Examples:
 
 ```yaml
-# ~/.omp/agent/config.yml
+# ~/.reagent/agent/config.yml
 extensions:
   - ~/my-exts/safety.ts
   - ./local/ext-pack
@@ -68,7 +68,7 @@ extensions:
 
 ```json
 {
-  "extensions": ["./.omp/extensions/my-extra"]
+  "extensions": ["./.reagent/extensions/my-extra"]
 }
 ```
 
@@ -212,7 +212,7 @@ When events run through `ExtensionRunner`, handler exceptions are caught and emi
 ### User-level
 
 ```text
-~/.omp/agent/
+~/.reagent/agent/
   config.yml
   extensions/
     guardrails.ts
@@ -224,7 +224,7 @@ When events run through `ExtensionRunner`, handler exceptions are caught and emi
 
 ```text
 <repo>/
-  .omp/
+  .reagent/
     settings.json
     extensions/
       checks/

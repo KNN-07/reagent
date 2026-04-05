@@ -19,8 +19,8 @@ A **plugin** is a directory containing skills, commands, hooks, MCP servers, or 
 
 **Scopes**: plugins can be installed at two scopes:
 
-- **user** (default) -- available in all projects, stored in `~/.omp/plugins/installed_plugins.json`
-- **project** -- available only in the current project, stored in `.omp/installed_plugins.json`
+- **user** (default) -- available in all projects, stored in `~/.reagent/plugins/installed_plugins.json`
+- **project** -- available only in the current project, stored in `.reagent/installed_plugins.json`
 
 Project-scoped installs shadow user-scoped installs of the same plugin.
 
@@ -180,7 +180,7 @@ The `source` field supports several formats:
 ## On-disk layout
 
 ```
-~/.omp/
+~/.reagent/
   config/
     marketplaces.json          # Registry of added marketplaces
   plugins/
@@ -189,7 +189,7 @@ The `source` field supports several formats:
       marketplaces/            # Cached marketplace catalogs
       plugins/                 # Cached plugin directories
 
-<project>/.omp/
+<project>/.reagent/
   installed_plugins.json       # Project-scoped installed plugins
 ```
 

@@ -20,7 +20,7 @@ omp plugin <action> ...
   -> src/commands/plugin.ts
   -> runPluginCommand(...) in src/cli/plugin-cli.ts
   -> PluginManager method (install/list/uninstall/link/...) 
-  -> mutate ~/.omp/plugins/{package.json,node_modules,omp-plugins.lock.json}
+  -> mutate ~/.reagent/plugins/{package.json,node_modules,reagent-plugins.lock.json}
   -> runtime discovery: discoverAndLoadCustomTools(...)
   -> getAllPluginToolPaths(cwd)
   -> custom tool loader imports tool modules
@@ -35,18 +35,18 @@ omp plugin <action> ...
 
 ## On-disk model
 
-Global plugin state lives under `~/.omp/plugins`:
+Global plugin state lives under `~/.reagent/plugins`:
 
 - `package.json` — dependency manifest used by `bun install`/`bun uninstall`
 - `node_modules/` — installed plugin packages or symlinks
-- `omp-plugins.lock.json` — runtime state:
+- `reagent-plugins.lock.json` — runtime state:
   - enabled/disabled per plugin
   - selected feature set per plugin
   - persisted plugin settings
 
 Project-local overrides live at:
 
-- `<cwd>/.omp/plugin-overrides.json`
+- `<cwd>/.reagent/plugin-overrides.json`
 
 Overrides are read-only from manager/loader perspective (no write path here) and can disable plugins or override features/settings for this project.
 
@@ -68,7 +68,7 @@ Overrides are read-only from manager/loader perspective (no write path here) and
 
 Manifest is resolved as:
 
-1. `package.json.omp`
+1. `package.json.reagent`
 2. fallback `package.json.pi`
 3. fallback `{ version: package.version }`
 
@@ -86,7 +86,7 @@ Malformed `package.json` JSON is a hard failure at read time; malformed manifest
 1. Parse feature bracket syntax from install spec.
 2. Validate package name against regex + shell-metacharacter denylist.
 3. Ensure plugin `package.json` exists (`omp-plugins`, private dependencies map).
-4. Run `bun install <packageSpec>` in `~/.omp/plugins`.
+4. Run `bun install <packageSpec>` in `~/.reagent/plugins`.
 5. Read installed package `node_modules/<name>/package.json`.
 6. Resolve manifest and compute `enabledFeatures`:
    - `[*]`: all declared features (or `null` if no feature map)
@@ -115,9 +115,9 @@ If uninstall command fails, runtime state is not changed.
 
 ## List flow (`PluginManager.list`)
 
-1. Read plugin dependency map from `~/.omp/plugins/package.json`.
+1. Read plugin dependency map from `~/.reagent/plugins/package.json`.
 2. Load lockfile runtime config (missing file -> empty defaults).
-3. Load project overrides (`<cwd>/.omp/plugin-overrides.json`, parse/read errors -> empty object with warning).
+3. Load project overrides (`<cwd>/.reagent/plugin-overrides.json`, parse/read errors -> empty object with warning).
 4. For each dependency with a resolvable package.json:
    - build `InstalledPlugin` record
    - merge feature/enable state:
@@ -129,7 +129,7 @@ This is the effective state used by CLI status output and settings/features oper
 
 ## Link flow (`PluginManager.link`)
 
-`link` supports local plugin development by symlinking a local package into `~/.omp/plugins/node_modules/<pkg.name>`.
+`link` supports local plugin development by symlinking a local package into `~/.reagent/plugins/node_modules/<pkg.name>`.
 
 Behavior:
 

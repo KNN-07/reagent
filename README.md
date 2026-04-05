@@ -15,7 +15,7 @@ Built on [oh-my-pi](https://github.com/can1357/oh-my-pi)'s coding agent framewor
 | AutoResearch | `/autoresearch` | Automated ML experimentation loop |
 | AutoPaper | `/autopaper` | End-to-end: survey → experiments → Lean verify → write → review |
 
-### All oh-my-pi Tools Included
+### All Built-in Tools Included
 bash, read/write/grep/find, fetch, browser, exa search & deep researcher, GitHub CLI, Python, Jupyter notebooks, MCP, LSP, autoresearch suite, and more.
 
 ---
@@ -113,7 +113,7 @@ ReAgent: [runs experiment, analyzes results, improves code]
 ReAgent: Run 1: val_acc=82.3% → Run 5: val_acc=87.1% (+4.8%)
 ```
 
-Based on oh-my-pi's autoresearch module. Includes presets for PyTorch training, benchmark evaluation, and custom configs.
+Based on the upstream autoresearch module. Includes presets for PyTorch training, benchmark evaluation, and custom configs.
 
 ---
 
@@ -155,7 +155,7 @@ They are auto-loaded at startup.
 Create `.reagent/SYSTEM.md` in your project directory to override or extend the default system prompt.
 
 ### Model Configuration
-ReAgent uses the same model configuration as oh-my-pi:
+ReAgent uses standard model configuration:
 ```bash
 reagent --model anthropic/claude-opus-4  # Specific model
 reagent --provider openai --model gpt-4o  # Provider + model
