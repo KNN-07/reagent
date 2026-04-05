@@ -22,6 +22,9 @@ export * from "./memory/KairosMemory";
 export * from "./extensibility/custom-tools/loader";
 export * from "./slash-commands";
 
+// Swarm / multi-agent pipeline orchestration
+export * from "./swarm/index";
+
 // Tools
 export * from "./tools/submit-result";
 export * from "./tools/dependency-check";

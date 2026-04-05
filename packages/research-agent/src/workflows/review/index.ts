@@ -1,16 +1,23 @@
 /**
  * /review workflow — multi-model simulated peer review
  *
- * Spawns 3 reviewer sub-agents with different personas and models,
- * then aggregates into a unified report with meta-review.
+ * Spawns 3 reviewer sub-agents with different personas, each running as a
+ * full reagent subagent with tool access (read, write, fetch, bash, etc.).
+ * After all reviewers complete, aggregates into a unified report via meta-review.
  */
 
 import * as fs from "node:fs/promises";
-import * as os from "node:os";
 import * as path from "node:path";
 import { completeSimple, Effort } from "@reagent/ra-ai";
 import { logger } from "@reagent/ra-utils";
-import type { ModelRegistry } from "@reagent/ra-coding-agent/config/model-registry";
+import type {
+	AgentDefinition,
+	AgentSource,
+	AuthStorage,
+	ModelRegistry,
+	Settings,
+} from "@reagent/ra-coding-agent";
+import { runSubprocess } from "@reagent/ra-coding-agent";
 import reviewerAPrompt from "./prompts/reviewer-a-methods.md" with { type: "text" };
 import reviewerBPrompt from "./prompts/reviewer-b-writing.md" with { type: "text" };
 import reviewerCPrompt from "./prompts/reviewer-c-impact.md" with { type: "text" };
@@ -76,33 +83,47 @@ Format:
 
 /**
  * Run the full simulated peer review pipeline.
+ *
+ * Each of the 3 reviewers runs as a full reagent subagent with tool access,
+ * allowing them to read the paper from disk, follow citations, etc.
+ * The meta-review uses a direct LLM call to synthesize the three reviews.
  */
 export async function runReview(
 	config: ReviewConfig,
 	modelRegistry: ModelRegistry,
 	sessionId: string,
+	options?: { settings?: Settings },
 ): Promise<ReviewReport> {
 	await fs.mkdir(config.outputDir, { recursive: true });
 
-	// Run all 3 reviewers in parallel
+	// Write the paper to a file so subagent reviewers can access it via read tool
+	const paperFilePath = path.join(config.outputDir, "paper-under-review.md");
+	await Bun.write(paperFilePath, config.paperText);
+
+	// authStorage is a public readonly field on ModelRegistry
+	const authStorage: AuthStorage = (modelRegistry as unknown as { authStorage: AuthStorage }).authStorage;
+
+	// Run all 3 reviewers in parallel as full subagents
+	logger.debug("Review: starting 3 parallel reviewer subagents", { venue: config.venue, outputDir: config.outputDir });
+
 	const [reviewA, reviewB, reviewC] = await Promise.all(
-		REVIEWERS.map((reviewer) => runSingleReview(reviewer, config, modelRegistry, sessionId)),
+		REVIEWERS.map((reviewer, i) =>
+			runSingleReview(reviewer, config, paperFilePath, sessionId, i, {
+				authStorage,
+				modelRegistry,
+				settings: options?.settings,
+			}),
+		),
 	);
 
-	// Generate meta-review
+	// Generate meta-review via direct LLM call (synthesis only — no tool access needed)
 	const allReviews = `# Review A (${REVIEWERS[0]!.name})\n\n${reviewA}\n\n---\n\n# Review B (${REVIEWERS[1]!.name})\n\n${reviewB}\n\n---\n\n# Review C (${REVIEWERS[2]!.name})\n\n${reviewC}`;
 
-	const metaReview = await runMetaReview(
-		config.venue,
-		allReviews,
-		modelRegistry,
-		sessionId,
-	);
+	const metaReview = await runMetaReview(config.venue, allReviews, modelRegistry, sessionId);
 
 	// Parse scores from reviews (simple regex)
 	const scores = [reviewA, reviewB, reviewC].map(extractScore);
-	const averageScore =
-		scores.reduce((sum, s, i) => sum + s * REVIEWERS[i]!.weight, 0);
+	const averageScore = scores.reduce((sum, s, i) => sum + s * REVIEWERS[i]!.weight, 0);
 
 	const recommendation = classifyRecommendation(averageScore);
 
@@ -133,58 +154,79 @@ export async function runReview(
 	};
 }
 
+/**
+ * Run a single reviewer as a full reagent subagent.
+ *
+ * The subagent has access to all standard tools (read, write, bash, fetch, etc.)
+ * allowing it to read the paper file, follow references, and write notes.
+ * It submits its review via the submit_result tool.
+ */
 async function runSingleReview(
 	reviewer: ReviewerDef,
 	config: ReviewConfig,
-	modelRegistry: ModelRegistry,
+	paperFilePath: string,
 	sessionId: string,
+	reviewerIndex: number,
+	options: {
+		authStorage?: AuthStorage;
+		modelRegistry: ModelRegistry;
+		settings?: Settings;
+	},
 ): Promise<string> {
-	const systemPrompt = reviewer.systemPrompt.replace("{{venue}}", config.venue);
+	const systemPrompt = reviewer.systemPrompt.replace(/\{\{venue\}\}/g, config.venue);
 
-	// Use the default model — in a real multi-model setup, each reviewer would
-	// use a different model (e.g., claude-sonnet / gemini-flash / gpt-4o).
-	// The model registry will use whatever is configured for the session.
-	const models = await modelRegistry.listModels?.() ?? [];
-	const model = models[0] ?? null;
-	if (!model) {
-		return `[Error: No model available for Reviewer ${reviewer.id}]`;
-	}
+	const agentDef: AgentDefinition = {
+		name: `reviewer-${reviewer.id.toLowerCase()}`,
+		description: `Peer reviewer — ${reviewer.name}`,
+		systemPrompt,
+		source: "project" as AgentSource,
+	};
 
-	const apiKey = await modelRegistry.getApiKey(model, sessionId);
-	if (!apiKey) {
-		return `[Error: No API key for Reviewer ${reviewer.id}]`;
-	}
+	const reviewerDir = path.join(config.outputDir, `.reviewer-${reviewer.id.toLowerCase()}`);
+
+	const task = `You are conducting peer review for a submission to ${config.venue}.
+
+The paper under review is at: ${paperFilePath}
+
+Please:
+1. Read the full paper using the \`read\` tool
+2. Evaluate it according to your expertise (${reviewer.name})
+3. Write a detailed review covering:
+   - Summary of the paper
+   - Strengths
+   - Weaknesses
+   - Detailed comments
+   - An overall score formatted exactly as: "Overall score: X/10"
+   - A recommendation: Accept / Weak Accept / Borderline / Weak Reject / Reject
+
+You may use additional tools (bash, fetch, web_search) to look up cited papers, verify claims, or check related work.
+
+When you have finished your review, call the \`submit_result\` tool with your complete review text.`;
 
 	try {
-		const response = await completeSimple(
-			model,
-			{
-				systemPrompt,
-				messages: [
-					{
-						role: "user",
-						content: [
-							{
-								type: "text",
-								text: `Please review the following paper for ${config.venue}:\n\n${config.paperText.slice(0, 60_000)}`,
-							},
-						],
-						timestamp: Date.now(),
-					},
-				],
-			},
-			{ apiKey, maxTokens: 3000, reasoning: Effort.Medium },
-		);
+		const result = await runSubprocess({
+			cwd: reviewerDir,
+			agent: agentDef,
+			task,
+			index: reviewerIndex,
+			id: `review-${sessionId}-reviewer-${reviewer.id}`,
+			authStorage: options.authStorage,
+			modelRegistry: options.modelRegistry,
+			settings: options.settings,
+			enableLsp: false,
+			artifactsDir: reviewerDir,
+		});
 
-		if (response.stopReason === "error") return `[Review error: ${response.errorMessage}]`;
+		if (result.exitCode !== 0) {
+			logger.warn(`Reviewer ${reviewer.id} subagent failed`, { error: result.error });
+			return `[Reviewer ${reviewer.id} (${reviewer.name}) failed: ${result.error ?? `exit code ${result.exitCode}`}]`;
+		}
 
-		return response.content
-			.filter((c): c is { type: "text"; text: string } => c.type === "text")
-			.map((c) => c.text)
-			.join("")
-			.trim();
+		// output is the submit_result content or final agent output
+		return result.output || `[Reviewer ${reviewer.id} produced no output]`;
 	} catch (err) {
-		return `[Review failed: ${String(err)}]`;
+		logger.warn(`Reviewer ${reviewer.id} threw an error`, { err });
+		return `[Reviewer ${reviewer.id} (${reviewer.name}) error: ${String(err)}]`;
 	}
 }
 
@@ -194,14 +236,14 @@ async function runMetaReview(
 	modelRegistry: ModelRegistry,
 	sessionId: string,
 ): Promise<string> {
-	const models = await modelRegistry.listModels?.() ?? [];
+	const models = (await modelRegistry.listModels?.()) ?? [];
 	const model = models[0] ?? null;
 	if (!model) return "[No model available for meta-review]";
 
 	const apiKey = await modelRegistry.getApiKey(model, sessionId);
 	if (!apiKey) return "[No API key for meta-review]";
 
-	const systemPrompt = META_REVIEW_SYSTEM.replace("{{venue}}", venue);
+	const systemPrompt = META_REVIEW_SYSTEM.replace(/\{\{venue\}\}/g, venue);
 
 	try {
 		const response = await completeSimple(
