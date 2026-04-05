@@ -32,6 +32,12 @@ async function main(): Promise<void> {
 	// are registered as custom slash commands via the extension system,
 	// loaded from src/workflows/*/slash-command.ts at session startup.
 	const parsed = parseArgs(rawArgs);
+	// Inject the workflow guard as an additional extension path.
+	// This uses the file-based extension discovery path so it loads
+	// at session creation time exactly like user-configured extensions.
+	const guardPath = path.resolve(import.meta.dir, "hooks", "workflow-guard.ts");
+	const existingExtra = parsed.extensions ?? [];
+	(parsed as { extensions: string[] }).extensions = [...existingExtra, guardPath];
 	await runRootCommand(parsed, rawArgs);
 }
 
