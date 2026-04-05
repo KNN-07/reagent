@@ -16,6 +16,9 @@ import { runRootCommand } from "@reagent/ra-coding-agent";
 import { parseArgs } from "@reagent/ra-coding-agent/cli/args";
 import { checkDependencies } from "./tools/dependency-check";
 import { REAGENT_VERSION } from "./version";
+// Side-effect: registers /survey, /review, /autoresearch, /autopaper as a native
+// capability provider so they appear in the TUI before the session loads.
+import "./provider";
 
 async function main(): Promise<void> {
 	const rawArgs = process.argv.slice(2);

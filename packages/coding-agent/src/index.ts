@@ -29,6 +29,11 @@ export * from "./extensibility/extensions";
 export * from "./extensibility/skills";
 // Slash commands
 export { type FileSlashCommand, loadSlashCommands as discoverSlashCommands } from "./extensibility/slash-commands";
+// Capability registration API — for native provider registration from external packages
+export { registerProvider } from "./capability";
+export { slashCommandCapability } from "./capability/slash-command";
+export type { SlashCommand as CapabilitySlashCommand } from "./capability/slash-command";
+export type { Provider, LoadContext, LoadResult, SourceMeta } from "./capability/types";
 export type * from "./lsp";
 // Main entry point
 export * from "./main";
