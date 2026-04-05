@@ -132,15 +132,15 @@ export class AcpAgent implements Agent {
 		return {
 			protocolVersion: PROTOCOL_VERSION,
 			agentInfo: {
-				name: "oh-my-pi",
-				title: "Oh My Pi",
+				name: "reagent",
+				title: "ReAgent",
 				version: VERSION,
 			},
 			authMethods: [
 				{
 					id: "agent",
 					name: "Agent-managed authentication",
-					description: "Oh My Pi uses its existing local authentication and provider configuration.",
+					description: "ReAgent uses its existing local authentication and provider configuration.",
 				},
 			],
 			agentCapabilities: {

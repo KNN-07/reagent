@@ -48,8 +48,18 @@ export function getPackageDir(): string {
 	return getProjectDir();
 }
 
-/** Get path to CHANGELOG.md (optional, may not exist in binary) */
+/** Get path to CHANGELOG.md — walks up from package dir to find root-level CHANGELOG.md */
 export function getChangelogPath(): string {
+	// Walk up from the coding-agent package dir to find the workspace-level CHANGELOG.md
+	let dir = getPackageDir();
+	while (dir !== path.dirname(dir)) {
+		const candidate = path.join(dir, "CHANGELOG.md");
+		if (fs.existsSync(candidate)) {
+			return candidate;
+		}
+		dir = path.dirname(dir);
+	}
+	// Fallback to package-adjacent CHANGELOG.md
 	return path.resolve(path.join(getPackageDir(), "CHANGELOG.md"));
 }
 
@@ -254,8 +264,8 @@ export class ConfigFile<T> implements IConfigFile<T> {
 
 /**
  * Config directory bases in priority order (highest first).
- * User-level: ~/.omp/agent, ~/.claude, ~/.codex, ~/.gemini
- * Project-level: .omp, .claude, .codex, .gemini
+ * User-level: ~/.reagent/agent, ~/.claude, ~/.codex, ~/.gemini
+ * Project-level: .reagent, .claude, .codex, .gemini
  */
 const USER_CONFIG_BASES = priorityList.map(({ dir, globalAgentDir }) => ({
 	base: () => path.join(os.homedir(), globalAgentDir ? globalAgentDir() : dir),
@@ -274,9 +284,9 @@ export interface ConfigDirEntry {
 }
 
 export interface GetConfigDirsOptions {
-	/** Include user-level directories (~/.omp/agent/...). Default: true */
+	/** Include user-level directories (~/.reagent/agent/...). Default: true */
 	user?: boolean;
-	/** Include project-level directories (.omp/...). Default: true */
+	/** Include project-level directories (.reagent/...). Default: true */
 	project?: boolean;
 	/** Current working directory for project paths. Default: getProjectDir() */
 	cwd?: string;
@@ -384,7 +394,7 @@ export function findConfigFileWithMeta(
 
 /**
  * Find all nearest config directories by walking up from cwd.
- * Returns one entry per config base (.omp, .claude) - the nearest one found.
+ * Returns one entry per config base (.reagent, .claude) - the nearest one found.
  * Results are in priority order (highest first).
  */
 export function findAllNearestProjectConfigDirs(subpath: string, cwd: string = getProjectDir()): ConfigDirEntry[] {

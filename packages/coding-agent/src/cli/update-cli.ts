@@ -1,7 +1,7 @@
 /**
  * Update CLI command handler.
  *
- * Handles `omp update` to check for and install updates.
+ * Handles `reagent update` to check for and install updates.
  * Uses bun if available, otherwise downloads binary from GitHub releases.
  */
 import * as fs from "node:fs";
@@ -62,17 +62,17 @@ function isPathInDirectory(filePath: string, directoryPath: string): boolean {
 
 type UpdateTarget = { method: "bun" } | { method: "binary"; path: string };
 
-function resolveUpdateMethod(ompPath: string, bunBinDir: string | undefined): "bun" | "binary" {
+function resolveUpdateMethod(appPath: string, bunBinDir: string | undefined): "bun" | "binary" {
 	if (!bunBinDir) return "binary";
-	return isPathInDirectory(ompPath, bunBinDir) ? "bun" : "binary";
+	return isPathInDirectory(appPath, bunBinDir) ? "bun" : "binary";
 }
 
-export function _resolveUpdateMethodForTest(ompPath: string, bunBinDir: string | undefined): "bun" | "binary" {
-	return resolveUpdateMethod(ompPath, bunBinDir);
+export function _resolveUpdateMethodForTest(appPath: string, bunBinDir: string | undefined): "bun" | "binary" {
+	return resolveUpdateMethod(appPath, bunBinDir);
 }
 async function resolveUpdateTarget(): Promise<UpdateTarget> {
 	const bunBinDir = await getBunGlobalBinDir();
-	const appPath = resolveOmpPath();
+	const appPath = resolveAppPath();
 
 	if (appPath) {
 		const method = resolveUpdateMethod(appPath, bunBinDir);
@@ -166,7 +166,7 @@ function getBinaryName(): string {
 /**
  * Resolve the path that `reagent` maps to in the user's PATH.
  */
-function resolveOmpPath(): string | undefined {
+function resolveAppPath(): string | undefined {
 	return Bun.which(APP_NAME) ?? undefined;
 }
 
@@ -176,18 +176,18 @@ function resolveOmpPath(): string | undefined {
 async function verifyInstalledVersion(
 	expectedVersion: string,
 ): Promise<{ ok: boolean; actual?: string; path?: string }> {
-	const ompPath = resolveOmpPath();
-	if (!ompPath) return { ok: false };
+	const appPath = resolveAppPath();
+	if (!appPath) return { ok: false };
 	try {
-		const result = await $`${ompPath} --version`.quiet().nothrow();
-		if (result.exitCode !== 0) return { ok: false, path: ompPath };
+		const result = await $`${appPath} --version`.quiet().nothrow();
+		if (result.exitCode !== 0) return { ok: false, path: appPath };
 		const output = result.text().trim();
 		// Output format: "reagent/X.Y.Z"
 		const match = output.match(/\/(\d+\.\d+\.\d+)/);
 		const actual = match?.[1];
-		return { ok: actual === expectedVersion, actual, path: ompPath };
+		return { ok: actual === expectedVersion, actual, path: appPath };
 	} catch {
-		return { ok: false, path: ompPath };
+		return { ok: false, path: appPath };
 	}
 }
 
