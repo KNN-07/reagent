@@ -1,5 +1,5 @@
 /** ReAgent version */
-export const REAGENT_VERSION = "0.1.0";
+export const REAGENT_VERSION = "1.0.0";
 
 /** Base config directory name (under ~/.reagent/) */
 export const CONFIG_DIR = ".reagent";

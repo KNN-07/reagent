@@ -1,7 +1,7 @@
 {
 	"type": "module",
 	"name": "@reagent/research-agent",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "AI/ML research agent harness — survey, review, autoresearch, autopaper workflows",
 	"license": "MIT",
 	"main": "./src/index.ts",
